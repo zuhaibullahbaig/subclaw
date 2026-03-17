@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # =============================================================================
-# SubClaw v1.5 - Subdomain Takeover Hunter & Interesting Apps Recon Tool
+# SubClaw v1.5 - Fast Subdomain Recon Tool
 # =============================================================================
-# Fast interactive tool for subfinder output (or auto subfinder via --domain).
-# Detects takeovers, live apps, and lets you mark interesting targets.
+# Quickly scan subdomains (from subfinder or --domain), check DNS, HTTP,
+# archive URLs, and let you decide which ones are interesting.
 #
 # Developed by Zuhaib Ullah Baig
 # GitHub: https://github.com/zuhaibullahbaig
@@ -60,20 +60,15 @@ def unique_filename(base)
 end
 
 # ====================== PARSING FUNCTIONS ======================
-def parse_dns_output(tool, raw_output, subdomain)
-  return raw_output if raw_output.empty? || raw_output == "Tool not available"
+def parse_dns_output(tool, raw_output)
+  return raw_output if raw_output.empty?
 
   if tool == "dig"
     lines = raw_output.lines.map(&:strip).reject(&:empty?)
-    if lines.any? { |l| l.include?("NXDOMAIN") || l.include?("No such") }
-      return "NXDOMAIN - No records"
-    end
-    # Extract clean answer lines (user's real dig output style)
-    answers = lines.select { |l| l.include?(" IN ") && !l.start_with?(";;") }
+    answers = lines.select { |l| l.include?(" IN ") }
     answers.empty? ? "No records found" : answers.join("\n  ")
   elsif tool == "nslookup"
-    # User's real nslookup output
-    lines = raw_output.lines.select { |l| l.include?("Address:") || l.include?("Name:") || l.include?("Non-authoritative") }
+    lines = raw_output.lines.select { |l| l.include?("Address:") || l.include?("Name:") }
     lines.empty? ? "No records found" : lines.join("\n  ")
   else
     raw_output
@@ -84,13 +79,8 @@ def parse_urls_output(raw_output)
   raw_output.lines.map(&:strip).reject(&:empty?).first(10)
 end
 
-def parse_ports_output(tool, raw_output)
-  return raw_output if raw_output.empty?
+def parse_ports_output(raw_output)
   raw_output.lines.map(&:strip).reject(&:empty?)
-end
-
-def parse_http_output(status, preview)
-  "#{status} - #{preview[0..200]}"
 end
 
 # ====================== CLI OPTIONS ======================
@@ -112,25 +102,24 @@ options = {
 OptionParser.new do |opts|
   opts.banner = <<~BANNER
 
-    #{c("SubClaw v1.5", 36)} — Subdomain Takeover & Interesting Target Hunter
+    #{c("SubClaw v1.5", 36)} — Fast Subdomain Recon Tool
     #{c("Developed by Zuhaib Ullah Baig • https://github.com/zuhaibullahbaig", 33)}
 
     Usage Examples:
       subclaw subfinder_output.txt
-      subclaw -i subfinder_output.txt
-      subclaw --domain example.com                     # auto-runs subfinder
-      subclaw --domain example.com --raw               # raw output mode
+      subclaw --domain example.com
+      subclaw --domain example.com --raw
       subclaw --domain example.com --dns nslookup --ports nmap
-      subclaw --domain example.com --urls gau --http curl
+      subclaw -i subs.txt --urls gau --http curl
       subclaw doctor
       subclaw --help
 
     Options:
   BANNER
 
-  opts.on("-i", "--input FILE", "Input file (subfinder output or any list)") { |v| options[:input] = v }
-  opts.on("--domain DOMAIN", "Auto-run subfinder on this domain (no file needed)") { |v| options[:domain] = v }
-  opts.on("--raw", "Show raw tool output (no parsing)") { options[:raw] = true }
+  opts.on("-i", "--input FILE", "Input file with subdomains") { |v| options[:input] = v }
+  opts.on("--domain DOMAIN", "Auto-run subfinder on this domain") { |v| options[:domain] = v }
+  opts.on("--raw", "Show raw tool output without parsing") { options[:raw] = true }
   opts.on("--dns TOOL", "DNS tool (dig / nslookup / custom) [default: dig]") { |v| options[:dns] = v }
   opts.on("--urls TOOL", "URL history tool (waybackurls / gau / custom) [default: waybackurls]") { |v| options[:urls] = v }
   opts.on("--http TOOL", "HTTP tool (built-in / curl) [default: built-in]") { |v| options[:http] = v }
@@ -138,17 +127,15 @@ OptionParser.new do |opts|
   opts.on("-h", "--help", "Show this help") { puts opts; exit }
 end.parse!
 
-# ====================== INPUT LOGIC (file or --domain) ======================
+# ====================== INPUT LOGIC ======================
 if options[:domain]
   puts c("Running subfinder on #{options[:domain]}...", 33)
   temp_file = "/tmp/subclaw_#{SecureRandom.hex(8)}.txt"
-  cmd = "subfinder -d #{options[:domain]} -o #{temp_file} -silent 2>/dev/null"
-  system(cmd)
+  system("subfinder -d #{options[:domain]} -o #{temp_file} -silent 2>/dev/null")
   input_file = temp_file
 elsif options[:input]
   input_file = options[:input]
 else
-  # No file and no --domain → clean help
   puts c("\nSubClaw v1.5", 36)
   puts "Usage: subclaw [options] <subdomains.txt>"
   puts "       subclaw --domain example.com"
@@ -161,7 +148,7 @@ unless File.exist?(input_file) && !File.zero?(input_file)
   exit 1
 end
 
-# ====================== TOOL USAGE LOGGING ======================
+# ====================== TOOL CONFIGURATION ======================
 puts c("\n=== SubClaw v1.5 Starting ===\n", 36)
 puts "Developed by Zuhaib Ullah Baig | https://github.com/zuhaibullahbaig"
 
@@ -173,7 +160,7 @@ puts "  Port Scan    : #{options[:ports] || 'Disabled'}"
 puts "  Raw Mode     : #{options[:raw] ? 'ENABLED' : 'Disabled'}"
 puts ""
 
-# ====================== DEPENDENCY WARNINGS ======================
+# ====================== WARNINGS ======================
 def warn_missing(tool, category)
   return unless tool && !command_exists(tool)
   puts c("⚠️  Warning: #{tool} not found for #{category}", 33)
@@ -200,7 +187,7 @@ def get_dns(sub, tool, raw_mode)
         else
           run_cmd("#{tool} #{sub} 2>/dev/null")
         end
-  raw_mode ? raw : parse_dns_output(tool, raw, sub)
+  raw_mode ? raw : parse_dns_output(tool, raw)
 end
 
 def get_urls(sub, tool, raw_mode)
@@ -213,9 +200,8 @@ end
 def get_http(sub, tool, raw_mode)
   if tool == "curl" && command_exists("curl")
     raw = run_cmd("timeout 2 curl -I -s -L https://#{sub} 2>/dev/null || timeout 2 curl -I -s -L http://#{sub} 2>/dev/null")
-    raw_mode ? raw : parse_http_output(raw[/HTTP\/\d\.\d (\d+)/, 1] || "NO-REPLY", raw)
+    raw_mode ? raw : (raw[/HTTP\/\d\.\d (\d+)/, 1] || "NO-REPLY")
   else
-    # Built-in (always parsed)
     ["https", "http"].each do |scheme|
       begin
         Timeout.timeout(2) do
@@ -225,14 +211,13 @@ def get_http(sub, tool, raw_mode)
           http.read_timeout = 2
           http.use_ssl = (scheme == "https")
           resp = http.get("/", { "User-Agent" => "SubClaw/1.5" })
-          body = resp.body ? resp.body[0..250].gsub(/[\r\n]+/, " ") : "(empty)"
-          return raw_mode ? "HTTP #{resp.code}" : parse_http_output(resp.code, body)
+          return raw_mode ? "HTTP #{resp.code}" : resp.code
         end
       rescue
         next
       end
     end
-    raw_mode ? "NO-REPLY" : "NO-REPLY - No HTTP reply (2s timeout)"
+    raw_mode ? "NO-REPLY" : "NO-REPLY"
   end
 end
 
@@ -245,22 +230,7 @@ def get_ports(sub, tool, raw_mode)
         else
           run_cmd("#{tool} #{sub} 2>/dev/null")
         end
-  raw_mode ? raw : parse_ports_output(tool, raw)
-end
-
-def takeover_hint(status, preview)
-  hints = {
-    "Heroku" => ["herokuapp", "no such app"],
-    "GitHub" => ["github pages", "there isn't a github pages site"],
-    "S3"     => ["nosuchbucket", "bucket does not exist"],
-    "Vercel" => ["deployment could not be found"],
-    "Netlify"=> ["page not found.*netlify"]
-  }
-  preview_down = preview.to_s.downcase
-  hints.each do |name, words|
-    return c("⚠️ POSSIBLE #{name} TAKEOVER!", 31) if words.any? { |w| preview_down.include?(w) }
-  end
-  nil
+  raw_mode ? raw : parse_ports_output(raw)
 end
 
 # ====================== MAIN LOOP ======================
@@ -278,7 +248,6 @@ File.readlines(input_file).each_with_index do |line, i|
   puts "  DNS   : #{dns.empty? ? 'No records found' : dns}"
   puts "  HTTP  : #{http}"
   puts "  URLs  : #{urls.size} archived links#{" (raw)" if options[:raw]}"
-  puts takeover_hint(http.to_s, http.to_s) if takeover_hint(http.to_s, http.to_s)
   puts "  Ports : #{ports ? ports.size : 0} open#{" (raw)" if options[:raw] && ports}" if ports && !ports.empty?
 
   print "\n  #{c('Interesting? (y = save report / any other key = skip / q = quit): ', 36)}"
@@ -296,7 +265,7 @@ File.readlines(input_file).each_with_index do |line, i|
       f.puts "DNS Tool       : #{options[:dns]}"
       f.puts "DNS Records    :\n#{dns}\n\n"
       f.puts "HTTP Tool      : #{options[:http]}"
-      f.puts "HTTP Response  : #{http}\n\n"
+      f.puts "HTTP Status    : #{http}\n\n"
       f.puts "URLs Tool      : #{options[:urls]}"
       f.puts "Archived URLs  :\n#{urls.join("\n")}\n\n"
       if ports
@@ -314,8 +283,6 @@ File.readlines(input_file).each_with_index do |line, i|
   end
 end
 
-# Cleanup temp file if --domain was used
 File.delete(input_file) if options[:domain] && input_file.start_with?("/tmp/subclaw_")
 
-puts "\n#{c("SubClaw finished!", 35)} Reports saved as subclaw_*.txt"
-puts c("Pro tip: grep -r 'TAKEOVER' .", 32)
+puts "\n#{c("SubClaw finished!", 35)} Interesting reports saved as subclaw_*.txt"

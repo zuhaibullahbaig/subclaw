@@ -1,9 +1,69 @@
 # SubClaw
 
-**Fast interactive subdomain recon tool** for bug bounty & pentesting.
+**Fast interactive subdomain reconnaissance tool** for bug bounty hunters and penetration testers.
 
-Scan subfinder output (or auto-run subfinder with `--domain`), check DNS, HTTP, archive URLs, detect takeovers, and mark interesting targets with one key press.
+Scan a list of subdomains (from subfinder or any other tool), check DNS records, HTTP status, archived URLs, and easily mark the ones you find interesting.
 
-### Quick Install
+### Features
+- Support for subfinder output files
+- `--domain` flag to automatically run subfinder
+- DNS lookup (dig / nslookup)
+- HTTP status check (built-in or curl)
+- Archive URLs via waybackurls or gau (max 10)
+- Optional port scanning with masscan or nmap
+- `--raw` mode to see original tool output
+- Single key interaction (`y` = save full report, any other key = skip)
+- Beautiful colored output + doctor command
+
+### Installation
+
+**One-command install:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zuhaibullahbaig/subclaw/main/install.sh | bash
+Manual install:
+Bashgit clone https://github.com/zuhaibullahbaig/subclaw.git
+cd subclaw
+chmod +x subclaw.rb
+sudo cp subclaw.rb /usr/local/bin/subclaw
+Usage
+Bash# Basic usage with subfinder output file
+subclaw subfinder_output.txt
+
+# Auto discover subdomains for a domain
+subclaw --domain example.com
+
+# With custom tools
+subclaw --domain example.com --dns nslookup --urls gau --http curl --ports nmap
+
+# Raw output mode (shows original tool output)
+subclaw --domain example.com --raw
+
+# Check all dependencies
+subclaw doctor
+
+# Show help
+subclaw --help
+Examples
+Bash# Most common way
+subclaw --domain target.com
+
+# Using gau instead of waybackurls
+subclaw --domain target.com --urls gau
+
+# Full power mode
+subclaw --domain target.com --dns nslookup --urls gau --http curl --ports nmap --raw
+Developed by
+Zuhaib Ullah Baig
+GitHub: https://github.com/zuhaibullahbaig
+
+Star the repo if it helps you speed up your recon! 🔥
+text### How to use it:
+
+1. Copy all the text above (from `# SubClaw` to the end).
+2. Open your GitHub repository.
+3. Create a new file named `README.md`.
+4. Paste the content and commit it.
+
+If you want me to also give you the updated `install.sh` file, just say “give me install.sh” and I’ll provide it ready to copy. 
+
+Your tool is now clean and professional — no more takeover mentions. Ready to push to GitHub!
