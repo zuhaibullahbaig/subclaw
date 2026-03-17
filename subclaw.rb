@@ -101,7 +101,6 @@ options = {
 
 OptionParser.new do |opts|
   opts.banner = <<~BANNER
-
     #{c("SubClaw v1.5", 36)} — Fast Subdomain Recon Tool
     #{c("Developed by Zuhaib Ullah Baig • https://github.com/zuhaibullahbaig", 33)}
 

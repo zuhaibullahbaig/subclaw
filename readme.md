@@ -1,10 +1,9 @@
 # SubClaw
 
-**Fast interactive subdomain reconnaissance tool** for bug bounty hunters and penetration testers.
-
 Scan a list of subdomains (from subfinder or any other tool), check DNS records, HTTP status, archived URLs, and easily mark the ones you find interesting.
 
-### Features
+## Features
+
 - Support for subfinder output files
 - `--domain` flag to automatically run subfinder
 - DNS lookup (dig / nslookup)
@@ -15,18 +14,27 @@ Scan a list of subdomains (from subfinder or any other tool), check DNS records,
 - Single key interaction (`y` = save full report, any other key = skip)
 - Beautiful colored output + doctor command
 
-### Installation
+## Installation
 
 **One-command install:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zuhaibullahbaig/subclaw/main/install.sh | bash
-Manual install:
-Bashgit clone https://github.com/zuhaibullahbaig/subclaw.git
+```
+
+**Manual install:**
+
+```bash
+git clone https://github.com/zuhaibullahbaig/subclaw.git
 cd subclaw
 chmod +x subclaw.rb
 sudo cp subclaw.rb /usr/local/bin/subclaw
-Usage
-Bash# Basic usage with subfinder output file
+```
+
+## Usage
+
+```bash
+# Basic usage with subfinder output file
 subclaw subfinder_output.txt
 
 # Auto discover subdomains for a domain
@@ -35,16 +43,20 @@ subclaw --domain example.com
 # With custom tools
 subclaw --domain example.com --dns nslookup --urls gau --http curl --ports nmap
 
-# Raw output mode (shows original tool output)
+# Raw output mode
 subclaw --domain example.com --raw
 
-# Check all dependencies
+# Check dependencies
 subclaw doctor
 
-# Show help
+# Help
 subclaw --help
-Examples
-Bash# Most common way
+```
+
+## Examples
+
+```bash
+# Most common way
 subclaw --domain target.com
 
 # Using gau instead of waybackurls
@@ -52,18 +64,14 @@ subclaw --domain target.com --urls gau
 
 # Full power mode
 subclaw --domain target.com --dns nslookup --urls gau --http curl --ports nmap --raw
-Developed by
-Zuhaib Ullah Baig
-GitHub: https://github.com/zuhaibullahbaig
+```
+
+## Developed by
+
+**Zuhaib Ullah Baig**  
+GitHub: [https://github.com/zuhaibullahbaig](https://github.com/zuhaibullahbaig)
+
+**Grok**  
+Website: [https://grok.com](https://grok.com)
 
 Star the repo if it helps you speed up your recon! 🔥
-text### How to use it:
-
-1. Copy all the text above (from `# SubClaw` to the end).
-2. Open your GitHub repository.
-3. Create a new file named `README.md`.
-4. Paste the content and commit it.
-
-If you want me to also give you the updated `install.sh` file, just say “give me install.sh” and I’ll provide it ready to copy. 
-
-Your tool is now clean and professional — no more takeover mentions. Ready to push to GitHub!
